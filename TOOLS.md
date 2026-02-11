@@ -31,6 +31,11 @@ Things like:
 
 Skills are shared. Your setup is yours. Keeping them apart means you can update skills without losing your notes, and share skills without leaking your infrastructure.
 
+## Slack行動ルール
+- メッセージを受け取ったらまずスタンプ（リアクション）を付ける
+- メンションなしでも反応する
+- チャンネル: C052GSRK97C
+
 ## GitHub連携
 - リポジトリ: https://github.com/naokiwakayama/moltworker
 - ローカルパス: ~/moltworker-repo
