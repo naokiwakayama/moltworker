@@ -13,3 +13,6 @@
 ## 起動時チェック
 - git config (user.name, user.email) が設定されてるか確認し、なければ設定する
 - ~/moltworker-repo が存在するか確認し、なければcloneする
+- git credential.helper が設定されてるか確認
+- ~/.git-credentials が存在するか確認
+- なければ再設定する（PATは環境変数 or 記憶から復元）
