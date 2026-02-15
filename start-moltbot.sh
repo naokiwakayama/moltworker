@@ -33,7 +33,7 @@ mkdir -p "$CONFIG_DIR"
 # ============================================================
 # Check if R2 backup exists by looking for clawdbot.json
 # The BACKUP_DIR may exist but be empty if R2 was just mounted
-# Note: backup structure is $BACKUP_DIR/clawdbot/ and $BACKUP_DIR/skills/
+# Note: backup structure is $BACKUP_DIR/clawdbot/ and $BACKUP_DIR/clawd/
 
 # Helper function to check if R2 backup is newer than local
 should_restore_from_r2() {
@@ -94,14 +94,23 @@ else
     echo "R2 not mounted, starting fresh"
 fi
 
-# Restore skills from R2 backup if available (only if R2 is newer)
-SKILLS_DIR="/root/clawd/skills"
-if [ -d "$BACKUP_DIR/skills" ] && [ "$(ls -A $BACKUP_DIR/skills 2>/dev/null)" ]; then
+# Restore workspace from R2 backup if available (only if R2 is newer)
+# This includes memory/, tools/, heartbeat/, identity/, skills/ etc.
+WORKSPACE_DIR="/root/clawd"
+if [ -d "$BACKUP_DIR/clawd" ] && [ "$(ls -A $BACKUP_DIR/clawd 2>/dev/null)" ]; then
     if should_restore_from_r2; then
-        echo "Restoring skills from $BACKUP_DIR/skills..."
-        mkdir -p "$SKILLS_DIR"
-        cp -a "$BACKUP_DIR/skills/." "$SKILLS_DIR/"
-        echo "Restored skills from R2 backup"
+        echo "Restoring workspace from $BACKUP_DIR/clawd..."
+        mkdir -p "$WORKSPACE_DIR"
+        cp -a "$BACKUP_DIR/clawd/." "$WORKSPACE_DIR/"
+        echo "Restored workspace from R2 backup"
+    fi
+elif [ -d "$BACKUP_DIR/skills" ] && [ "$(ls -A $BACKUP_DIR/skills 2>/dev/null)" ]; then
+    # Legacy backup format: only skills/ was backed up
+    if should_restore_from_r2; then
+        echo "Restoring skills from legacy backup $BACKUP_DIR/skills..."
+        mkdir -p "$WORKSPACE_DIR/skills"
+        cp -a "$BACKUP_DIR/skills/." "$WORKSPACE_DIR/skills/"
+        echo "Restored skills from legacy R2 backup"
     fi
 fi
 
