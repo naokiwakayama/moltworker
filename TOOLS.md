@@ -30,6 +30,29 @@ Skills define *how* tools work. This file is for *your* specifics — the stuff 
 
 ---
 
+## X (Twitter) ツイート取得
+
+X公式APIは有料だが、**FxTwitter API** 経由で無料で取得可能。
+
+### 使い方
+```
+https://api.fxtwitter.com/{user}/status/{tweet_id}
+```
+
+### 例
+- 元URL: `https://x.com/laiso/status/2022702596465791228`
+- API: `https://api.fxtwitter.com/laiso/status/2022702596465791228`
+- ユーザー不明時は `i` でもOK: `https://api.fxtwitter.com/i/status/2022702596465791228`
+
+### レスポンス
+JSONで返ってくる。主なフィールド:
+- `tweet.text` - ツイート本文
+- `tweet.author` - 投稿者情報
+- `tweet.likes`, `retweets`, `views` - エンゲージメント
+- `tweet.created_at` - 投稿日時
+
+---
+
 ## Why Separate?
 
 Skills are shared. Your setup is yours. Keeping them apart means you can update skills without losing your notes, and share skills without leaking your infrastructure.
