@@ -64,7 +64,7 @@
   ],
   // Cron trigger to sync moltbot data to R2 every 5 minutes
   "triggers": {
-    "crons": ["0 */6 * * *"],
+    "crons": ["*/5 * * * *"],
   },
   // Browser Rendering binding for CDP shim
   "browser": {
