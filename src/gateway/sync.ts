@@ -30,6 +30,26 @@ export async function syncToR2(sandbox: Sandbox, env: MoltbotEnv): Promise<SyncR
     return { success: false, error: 'R2 storage is not configured' };
   }
 
+  // Guard: don't sync empty workspace to R2
+  try {
+    const checkResult = await sandbox.startProcess(
+      'test -f /root/clawd/MEMORY.md && echo "HAS_DATA" || echo "EMPTY"'
+    );
+    await waitForProcess(checkResult, 5000);
+    const checkLogs = await checkResult.getLogs();
+    if (checkLogs.stdout?.trim() === 'EMPTY') {
+      console.warn('[sync] Workspace appears empty, skipping R2 sync to prevent data loss');
+      return { success: false, error: 'Skipped: workspace is empty' };
+    }
+  } catch (err) {
+    console.warn('[sync] Failed to check workspace state, skipping sync for safety');
+    return {
+      success: false,
+      error: 'Failed to verify workspace state',
+      details: err instanceof Error ? err.message : 'Unknown error',
+    };
+  }
+
   // Mount R2 if not already mounted
   const mounted = await mountR2Storage(sandbox, env);
   if (!mounted) {
@@ -57,9 +77,12 @@ export async function syncToR2(sandbox: Sandbox, env: MoltbotEnv): Promise<SyncR
     };
   }
 
-  // Run rsync to backup config to R2
+  // Run rsync to backup config and workspace to R2
   // Note: Use --no-times because s3fs doesn't support setting timestamps
-  const syncCmd = `rsync -r --no-times --delete --exclude='*.lock' --exclude='*.log' --exclude='*.tmp' /root/.clawdbot/ ${R2_MOUNT_PATH}/clawdbot/ && rsync -r --no-times --delete /root/clawd/skills/ ${R2_MOUNT_PATH}/skills/ && date -Iseconds > ${R2_MOUNT_PATH}/.last-sync`;
+  // Backup targets:
+  //   1. /root/.clawdbot/ → R2/clawdbot/ (Config: clawdbot.json etc.)
+  //   2. /root/clawd/ → R2/clawd/ (Workspace: memory, tools, heartbeat, identity, skills etc.)
+  const syncCmd = `rsync -r --no-times --delete --exclude='*.lock' --exclude='*.log' --exclude='*.tmp' /root/.clawdbot/ ${R2_MOUNT_PATH}/clawdbot/ && rsync -r --no-times --delete --exclude='*.lock' --exclude='*.log' --exclude='*.tmp' --exclude='node_modules/' --exclude='.git/' /root/clawd/ ${R2_MOUNT_PATH}/clawd/ && date -Iseconds > ${R2_MOUNT_PATH}/.last-sync`;
   
   try {
     const proc = await sandbox.startProcess(syncCmd);
@@ -67,7 +90,7 @@ export async function syncToR2(sandbox: Sandbox, env: MoltbotEnv): Promise<SyncR
 
     // Check for success by reading the timestamp file
     // (process status may not update reliably in sandbox API)
-    // Note: backup structure is ${R2_MOUNT_PATH}/clawdbot/ and ${R2_MOUNT_PATH}/skills/
+    // Note: backup structure is ${R2_MOUNT_PATH}/clawdbot/ and ${R2_MOUNT_PATH}/clawd/
     const timestampProc = await sandbox.startProcess(`cat ${R2_MOUNT_PATH}/.last-sync`);
     await waitForProcess(timestampProc, 5000);
     const timestampLogs = await timestampProc.getLogs();
